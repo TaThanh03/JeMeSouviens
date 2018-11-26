@@ -22,9 +22,12 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     private var cam : MKMapCamera? //for 3D
     // location in map need : latitude, longtitude
     // camera needs : orientation, altitude
-
+    private var eagle_altitude = 50.0
+    private var eagle_orientation = 120.0
     private var count = 1
     private var color = UIColor.orange
+    private var zoom = 0
+    
     //private let mapMode = UISegmentedControl(items: ["Map", "Satellite", "Mix"])
     private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
     
@@ -39,12 +42,11 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         CLmngr.distanceFilter = 1.0 //Precision = 1m
         CLmngr.requestWhenInUseAuthorization()
         mapMode.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        //mapMode.selectedSegmentIndex = 0
-        mapMode.selectedSegmentIndexes = IndexSet([1, 3])
+        mapMode.selectedSegmentIndexes = IndexSet([0])
         
         super.init(frame: frame)
         self.backgroundColor = UIColor.white
-        find.addTarget(self, action: #selector(computePosition(sender:)), for: .touchDown)
+        find.addTarget(self, action: #selector(computePosition(_:)), for: .touchDown)
         add.addTarget(self, action: #selector(addPin(sender:)), for: .touchDown)
         mapMode.addTarget(self, action: #selector(changeMap(sender:)), for: .valueChanged)
         mapMode.delegate = self
@@ -78,7 +80,7 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         map.frame = CGRect(x: 0, y: top + 160, width: Int(size.width), height: Int(size.height - 160))
     }
     
-    @objc func computePosition(sender: UIButton) {
+    @objc func computePosition(_ sender: Any) {
         NSLog("computePosition")
         location.text = "searching..."
         CLmngr.startUpdatingLocation()
@@ -92,18 +94,60 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     
     @objc func changeMap(sender: MultiSelectSegmentedControl) {
         NSLog("changeMap")
-        if sender.selectedSegmentIndexes == [0] {
+        if sender.selectedSegmentIndexes == [0] { //Map mode
+            setupCamera(is3D: false)
             map.mapType = .standard
         }
-        if sender.selectedSegmentIndexes == [1] {
+        if sender.selectedSegmentIndexes == [1] { //Satellite mode
+            setupCamera(is3D: false)
             map.mapType = .satellite
         }
-        if sender.selectedSegmentIndexes == [2] {
+        if sender.selectedSegmentIndexes == [2] { //Mix mode
+            setupCamera(is3D: false)
             map.mapType = .hybrid
         }
-        if sender.selectedSegmentIndex == 3 {
-            map.mapType = .hybrid
+        
+        if sender.selectedSegmentIndexes == [0, 3] { //Map mode in 3D
+            print("3D standard")
+            cam = nil
+            setupCamera(is3D: true)
+            map.mapType = .standard
         }
+        if sender.selectedSegmentIndexes == [1, 3] { //Satellite mode in 3D
+            print("3D Satellite")
+            cam = nil
+            setupCamera(is3D: true)
+            map.mapType = .satelliteFlyover
+        }
+        if sender.selectedSegmentIndexes == [2, 3] { //Mix mode in 3D
+            print("3D Mix")
+            cam = nil
+            setupCamera(is3D: true)
+            map.mapType = .hybridFlyover
+        }
+        
+        if cam != nil {
+            map.camera = cam!
+        }
+    }
+    
+    func setupCamera(is3D: Bool) {
+        let lat = map.centerCoordinate.latitude
+        let lon = map.centerCoordinate.longitude
+        let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        var viewPoint = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        if is3D {
+            viewPoint = CLLocationCoordinate2D(latitude: lat - 0.01, longitude: lon)
+        }
+        let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
+        
+        print("location", location.latitude , location.longitude)
+        print("viewPoint", viewPoint.latitude , viewPoint.longitude)
+        map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
+        map.showsBuildings = true
+        cam = MKMapCamera(lookingAtCenter: location, fromEyeCoordinate: viewPoint, eyeAltitude: eagle_altitude)
+        cam?.heading = eagle_orientation
+        map.camera = cam!
     }
     
     func nextColor (c: UIColor) -> UIColor {
@@ -142,13 +186,20 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         return epingle
     }
     
-    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) { //when tap on the (i) button
         location.text = "Coordinate of -" + (view.annotation?.title!)! + "-"
     }
     
-    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) { //
         location.text = "You selected -" + (view.annotation?.title!)! + "-"
     }
+    /*
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        let zoomWidth = mapView.visibleMapRect.size.width
+        zoom = Int(log2(zoomWidth)) - 7
+        print(mapView.visibleMapRect.size.width, mapView.visibleMapRect.size.height)
+        print("...REGION DID CHANGE: ZOOM FACTOR \(zoom)")
+    }*/
     
     // MultiSelectSegmentedControlDelegate protocol
     func multiSelect(_ multiSelectSegmentedControl: MultiSelectSegmentedControl, didChangeValue value: Bool, at index: UInt) {
