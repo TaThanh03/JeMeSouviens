@@ -17,6 +17,7 @@
 		13A7F1B621A8618A00A5EDEC /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 13A7F1B521A8618A00A5EDEC /* MapKit.framework */; };
 		13A7F1B821A864BA00A5EDEC /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F1B721A864BA00A5EDEC /* MapView.swift */; };
 		13A7F1BA21A8698300A5EDEC /* AnAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F1B921A8698300A5EDEC /* AnAnnotation.swift */; };
+		21DEDF52EEE960B3B09B61DD /* Pods_JeMeSouviens.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27F4B2622AECBE498382ABF8 /* Pods_JeMeSouviens.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +55,9 @@
 		13A7F1B521A8618A00A5EDEC /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		13A7F1B721A864BA00A5EDEC /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		13A7F1B921A8698300A5EDEC /* AnAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnAnnotation.swift; sourceTree = "<group>"; };
+		27F4B2622AECBE498382ABF8 /* Pods_JeMeSouviens.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_JeMeSouviens.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4B9468EC052207DD5B002C2 /* Pods-JeMeSouviens.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JeMeSouviens.release.xcconfig"; path = "Pods/Target Support Files/Pods-JeMeSouviens/Pods-JeMeSouviens.release.xcconfig"; sourceTree = "<group>"; };
+		B364B0E209F8AEBC30163B59 /* Pods-JeMeSouviens.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-JeMeSouviens.debug.xcconfig"; path = "Pods/Target Support Files/Pods-JeMeSouviens/Pods-JeMeSouviens.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +66,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				13A7F1B621A8618A00A5EDEC /* MapKit.framework in Frameworks */,
+				21DEDF52EEE960B3B09B61DD /* Pods_JeMeSouviens.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +95,7 @@
 				13A7F1A421A85E9200A5EDEC /* JeMeSouviensUITests */,
 				13A7F18321A85E9100A5EDEC /* Products */,
 				13A7F1B421A8618A00A5EDEC /* Frameworks */,
+				C59E2287A246AF965CEFBE87 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -141,8 +147,18 @@
 			isa = PBXGroup;
 			children = (
 				13A7F1B521A8618A00A5EDEC /* MapKit.framework */,
+				27F4B2622AECBE498382ABF8 /* Pods_JeMeSouviens.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C59E2287A246AF965CEFBE87 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				B364B0E209F8AEBC30163B59 /* Pods-JeMeSouviens.debug.xcconfig */,
+				A4B9468EC052207DD5B002C2 /* Pods-JeMeSouviens.release.xcconfig */,
+			);
+			name = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -152,9 +168,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13A7F1AA21A85E9200A5EDEC /* Build configuration list for PBXNativeTarget "JeMeSouviens" */;
 			buildPhases = (
+				9E72CAC34374ED4446DF5BCF /* [CP] Check Pods Manifest.lock */,
 				13A7F17E21A85E9100A5EDEC /* Sources */,
 				13A7F17F21A85E9100A5EDEC /* Frameworks */,
 				13A7F18021A85E9100A5EDEC /* Resources */,
+				B04DEC4E4E04A2EF27F15A2A /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -284,6 +302,53 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		9E72CAC34374ED4446DF5BCF /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-JeMeSouviens-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B04DEC4E4E04A2EF27F15A2A /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-JeMeSouviens/Pods-JeMeSouviens-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/MultiSelectSegmentedControl/MultiSelectSegmentedControl.framework",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MultiSelectSegmentedControl.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-JeMeSouviens/Pods-JeMeSouviens-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		13A7F17E21A85E9100A5EDEC /* Sources */ = {
@@ -466,6 +531,7 @@
 		};
 		13A7F1AB21A85E9200A5EDEC /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B364B0E209F8AEBC30163B59 /* Pods-JeMeSouviens.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -484,6 +550,7 @@
 		};
 		13A7F1AC21A85E9200A5EDEC /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A4B9468EC052207DD5B002C2 /* Pods-JeMeSouviens.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;

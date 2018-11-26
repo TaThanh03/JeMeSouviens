@@ -1,0 +1,16 @@
+PODS:
+  - MultiSelectSegmentedControl (1.2.1)
+
+DEPENDENCIES:
+  - MultiSelectSegmentedControl
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - MultiSelectSegmentedControl
+
+SPEC CHECKSUMS:
+  MultiSelectSegmentedControl: 495230a5a5fbb6edb03d541f173433922ef0c592
+
+PODFILE CHECKSUM: 6545425ecabf5c04ade96a34f1262fc1b02684eb
+
+COCOAPODS: 1.5.3

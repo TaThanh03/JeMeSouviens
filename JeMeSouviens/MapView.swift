@@ -9,8 +9,10 @@
 import Foundation
 import CoreLocation
 import MapKit
+import MultiSelectSegmentedControl //3rd party library
 
-class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDelegate {
+
+class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDelegate, MultiSelectSegmentedControlDelegate {
     private let find = UIButton(type: .system)
     private let add = UIButton(type: .contactAdd)
     private let location = UITextView()
@@ -23,7 +25,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
 
     private var count = 1
     private var color = UIColor.orange
-    private let mapMode = UISegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
+    //private let mapMode = UISegmentedControl(items: ["Map", "Satellite", "Mix"])
+    private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
     
     override init(frame: CGRect) {
         find.setTitle("Where am i?", for: .normal)
@@ -36,21 +39,23 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         CLmngr.distanceFilter = 1.0 //Precision = 1m
         CLmngr.requestWhenInUseAuthorization()
         mapMode.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        mapMode.selectedSegmentIndex = 0
+        //mapMode.selectedSegmentIndex = 0
+        mapMode.selectedSegmentIndexes = IndexSet([1, 3])
         
         super.init(frame: frame)
         self.backgroundColor = UIColor.white
         find.addTarget(self, action: #selector(computePosition(sender:)), for: .touchDown)
         add.addTarget(self, action: #selector(addPin(sender:)), for: .touchDown)
         mapMode.addTarget(self, action: #selector(changeMap(sender:)), for: .valueChanged)
+        mapMode.delegate = self
         map.delegate = self
         CLmngr.delegate = self
 
         self.addSubview(find)
         self.addSubview(add)
         self.addSubview(location)
-        self.addSubview(mapMode)
         self.addSubview(map)
+        self.addSubview(mapMode)
         self.drawInSize(UIScreen.main.bounds.size)
     }
     
@@ -75,7 +80,7 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     
     @objc func computePosition(sender: UIButton) {
         NSLog("computePosition")
-        location.text = "I am searching..."
+        location.text = "searching..."
         CLmngr.startUpdatingLocation()
     }
     
@@ -85,14 +90,15 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         map.addAnnotation(a)
     }
     
-    @objc func changeMap(sender: UISegmentedControl) {
-        if sender.selectedSegmentIndex == 0 {
+    @objc func changeMap(sender: MultiSelectSegmentedControl) {
+        NSLog("changeMap")
+        if sender.selectedSegmentIndexes == [0] {
             map.mapType = .standard
         }
-        if sender.selectedSegmentIndex == 1 {
+        if sender.selectedSegmentIndexes == [1] {
             map.mapType = .satellite
         }
-        if sender.selectedSegmentIndex == 2 {
+        if sender.selectedSegmentIndexes == [2] {
             map.mapType = .hybrid
         }
         if sender.selectedSegmentIndex == 3 {
@@ -143,4 +149,21 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         location.text = "You selected -" + (view.annotation?.title!)! + "-"
     }
+    
+    // MultiSelectSegmentedControlDelegate protocol
+    func multiSelect(_ multiSelectSegmentedControl: MultiSelectSegmentedControl, didChangeValue value: Bool, at index: UInt) {
+        if index == 0 {
+            mapMode.selectedSegmentIndexes.remove(1)
+            mapMode.selectedSegmentIndexes.remove(2)
+        }
+        if index == 1 {
+            mapMode.selectedSegmentIndexes.remove(0)
+            mapMode.selectedSegmentIndexes.remove(2)
+        }
+        if index == 2 {
+            mapMode.selectedSegmentIndexes.remove(1)
+            mapMode.selectedSegmentIndexes.remove(0)
+        }
+    }
+    
 }
