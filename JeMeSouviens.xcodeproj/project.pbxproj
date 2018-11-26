@@ -14,6 +14,9 @@
 		13A7F19021A85E9200A5EDEC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 13A7F18E21A85E9200A5EDEC /* LaunchScreen.storyboard */; };
 		13A7F19B21A85E9200A5EDEC /* JeMeSouviensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F19A21A85E9200A5EDEC /* JeMeSouviensTests.swift */; };
 		13A7F1A621A85E9200A5EDEC /* JeMeSouviensUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F1A521A85E9200A5EDEC /* JeMeSouviensUITests.swift */; };
+		13A7F1B621A8618A00A5EDEC /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 13A7F1B521A8618A00A5EDEC /* MapKit.framework */; };
+		13A7F1B821A864BA00A5EDEC /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F1B721A864BA00A5EDEC /* MapView.swift */; };
+		13A7F1BA21A8698300A5EDEC /* AnAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7F1B921A8698300A5EDEC /* AnAnnotation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +50,10 @@
 		13A7F1A121A85E9200A5EDEC /* JeMeSouviensUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JeMeSouviensUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		13A7F1A521A85E9200A5EDEC /* JeMeSouviensUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JeMeSouviensUITests.swift; sourceTree = "<group>"; };
 		13A7F1A721A85E9200A5EDEC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		13A7F1B321A8615E00A5EDEC /* JeMeSouviens.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = JeMeSouviens.entitlements; sourceTree = "<group>"; };
+		13A7F1B521A8618A00A5EDEC /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
+		13A7F1B721A864BA00A5EDEC /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
+		13A7F1B921A8698300A5EDEC /* AnAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnAnnotation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13A7F1B621A8618A00A5EDEC /* MapKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,6 +89,7 @@
 				13A7F19921A85E9200A5EDEC /* JeMeSouviensTests */,
 				13A7F1A421A85E9200A5EDEC /* JeMeSouviensUITests */,
 				13A7F18321A85E9100A5EDEC /* Products */,
+				13A7F1B421A8618A00A5EDEC /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -97,12 +106,15 @@
 		13A7F18421A85E9100A5EDEC /* JeMeSouviens */ = {
 			isa = PBXGroup;
 			children = (
+				13A7F1B321A8615E00A5EDEC /* JeMeSouviens.entitlements */,
 				13A7F18521A85E9100A5EDEC /* AppDelegate.swift */,
 				13A7F18721A85E9100A5EDEC /* ViewController.swift */,
 				13A7F18921A85E9100A5EDEC /* Main.storyboard */,
 				13A7F18C21A85E9200A5EDEC /* Assets.xcassets */,
 				13A7F18E21A85E9200A5EDEC /* LaunchScreen.storyboard */,
 				13A7F19121A85E9200A5EDEC /* Info.plist */,
+				13A7F1B721A864BA00A5EDEC /* MapView.swift */,
+				13A7F1B921A8698300A5EDEC /* AnAnnotation.swift */,
 			);
 			path = JeMeSouviens;
 			sourceTree = "<group>";
@@ -123,6 +135,14 @@
 				13A7F1A721A85E9200A5EDEC /* Info.plist */,
 			);
 			path = JeMeSouviensUITests;
+			sourceTree = "<group>";
+		};
+		13A7F1B421A8618A00A5EDEC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				13A7F1B521A8618A00A5EDEC /* MapKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -193,6 +213,20 @@
 				TargetAttributes = {
 					13A7F18121A85E9100A5EDEC = {
 						CreatedOnToolsVersion = 10.1;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 0;
+							};
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.DataProtection = {
+								enabled = 0;
+							};
+							com.apple.Maps.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 					13A7F19521A85E9200A5EDEC = {
 						CreatedOnToolsVersion = 10.1;
@@ -257,7 +291,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				13A7F18821A85E9100A5EDEC /* ViewController.swift in Sources */,
+				13A7F1B821A864BA00A5EDEC /* MapView.swift in Sources */,
 				13A7F18621A85E9100A5EDEC /* AppDelegate.swift in Sources */,
+				13A7F1BA21A8698300A5EDEC /* AnAnnotation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
