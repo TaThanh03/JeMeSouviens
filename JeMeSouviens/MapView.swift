@@ -9,30 +9,69 @@
 import Foundation
 import CoreLocation
 import MapKit
+import UIKit
 import MultiSelectSegmentedControl //3rd party library
 
 
-class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDelegate, MultiSelectSegmentedControlDelegate {
-    private let find = UIButton(type: .system)
-    private let add = UIButton(type: .contactAdd)
+class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIScrollViewDelegate, MultiSelectSegmentedControlDelegate {
     private let location = UITextView()
+    //add, delete, home, contact, camera, folder
+    private let toolbar = UIToolbar();
+    private let toolbar_add = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: nil)
+    private let toolbar_trash = UIBarButtonItem(barButtonSystemItem: .trash, target: nil, action: nil)
+    private let toolbar_home = UIBarButtonItem(barButtonSystemItem: .refresh, target: nil, action: nil)
+    private let toolbar_contact = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: nil, action: nil)
+    private let toolbar_camera = UIBarButtonItem(barButtonSystemItem: .camera, target: nil, action: nil)
+    private let toolbar_folder = UIBarButtonItem(barButtonSystemItem: .organize, target: nil, action: nil)
     
-    private let CLmngr = CLLocationManager() //for location
-    private let map = MKMapView() //for map
-    private var cam : MKMapCamera? //for 3D
     // location in map need : latitude, longtitude
     // camera needs : orientation, altitude
+    private let CLmngr = CLLocationManager() //for location
+    private let map = MKMapView() //for map
+    private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
+    private var cam : MKMapCamera? //for 3D
     private var eagle_altitude = 50.0
     private var eagle_orientation = 120.0
     private var count = 1
     private var color = UIColor.orange
     private var zoom = 0
+    private var previousMapRect = MKMapRect()
     
-    //private let mapMode = UISegmentedControl(items: ["Map", "Satellite", "Mix"])
-    private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
+    //Photo
+    private let scrollPict = UIScrollView()
+    private var aPicture = UIImageView()
     
     override init(frame: CGRect) {
-        find.setTitle("Where am i?", for: .normal)
+        super.init(frame: frame)
+        self.backgroundColor = UIColor.white
+        
+        //ToolBar
+        let espace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        espace.width = 10
+        let varEspace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace ,target: nil, action: nil)
+        toolbar.items = [toolbar_add,espace, toolbar_trash, varEspace, toolbar_home, varEspace, toolbar_contact, espace, toolbar_camera, espace, toolbar_folder]
+        enableToolBar(turnOn: false)
+        toolbar_home.target = self.superview
+        toolbar_home.action = #selector(computePosition(_:))
+        toolbar_add.target = self.superview
+        toolbar_add.action = #selector(addPin(sender:))
+        toolbar_folder.target = self.superview
+        toolbar_folder.action = #selector(doSelectPhoto)
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            toolbar_camera.target = self.superview
+            toolbar_camera.action = #selector(doTakePhoto)
+        }
+        
+        //PhotoView
+        scrollPict.backgroundColor = .lightGray
+        scrollPict.maximumZoomScale = 1.0
+        scrollPict.minimumZoomScale = 0.05
+        scrollPict.contentInset = UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2)
+        scrollPict.delegate = self
+        scrollPict.addSubview(aPicture)
+        
+        
+        // Map and Location
         location.isSelectable = false
         location.isEditable = false
         location.text = "Where am i?"
@@ -42,22 +81,16 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         CLmngr.distanceFilter = 1.0 //Precision = 1m
         CLmngr.requestWhenInUseAuthorization()
         mapMode.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        mapMode.selectedSegmentIndexes = IndexSet([0])
-        
-        super.init(frame: frame)
-        self.backgroundColor = UIColor.white
-        find.addTarget(self, action: #selector(computePosition(_:)), for: .touchDown)
-        add.addTarget(self, action: #selector(addPin(sender:)), for: .touchDown)
-        mapMode.addTarget(self, action: #selector(changeMap(sender:)), for: .valueChanged)
+        mapMode.selectedSegmentIndexes = IndexSet([2])
         mapMode.delegate = self
         map.delegate = self
         CLmngr.delegate = self
-
-        self.addSubview(find)
-        self.addSubview(add)
-        self.addSubview(location)
+        
         self.addSubview(map)
+        self.addSubview(scrollPict)
         self.addSubview(mapMode)
+        self.addSubview(location)
+        self.addSubview(toolbar)
         self.drawInSize(UIScreen.main.bounds.size)
     }
     
@@ -67,17 +100,17 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     
     func drawInSize(_ size: CGSize) {
         var top = 20
+        let tbar = 44
         if UIDevice.current.userInterfaceIdiom == .phone && size.height >= 812 {
             top = 30
         }
         else if UIDevice.current.userInterfaceIdiom == .phone && size.width > size.height {
             top = 0
         }
-        find.frame = CGRect(x: Int(size.width/2 - 50), y: top + 10, width: 100, height: 30)
-        add.frame = CGRect(x: Int(size.width - 40), y: top + 10, width: 30, height: 30)
-        location.frame = CGRect(x: 10, y: top+100, width: Int(size.width - 20), height: 60)
-        mapMode.frame = CGRect(x: 20, y: top + 180, width: Int(size.width - 40), height: 30)
-        map.frame = CGRect(x: 0, y: top + 160, width: Int(size.width), height: Int(size.height - 160))
+        map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
+        mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+        toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+        location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
     }
     
     @objc func computePosition(_ sender: Any) {
@@ -87,45 +120,57 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     }
     
     @objc func addPin(sender: UIButton) {
-        let a = AnAnnotation(c: map.centerCoordinate, t: String(format:"location %d", count), st: "fill me")
+        let a = AnAnnotation(c: map.centerCoordinate, t: String(format:"Name %d", count), st: "Tel")
         count += 1
+        //Annotation will be handle by the map
         map.addAnnotation(a)
     }
     
-    @objc func changeMap(sender: MultiSelectSegmentedControl) {
-        NSLog("changeMap")
-        if sender.selectedSegmentIndexes == [0] { //Map mode
-            setupCamera(is3D: false)
+    func enableToolBar(turnOn: Bool) {
+        if turnOn {
+            toolbar_trash.isEnabled = true
+            toolbar_contact.isEnabled = true
+            toolbar_camera.isEnabled = true
+            toolbar_folder.isEnabled = true
+        } else {
+            toolbar_trash.isEnabled = false
+            toolbar_contact.isEnabled = false
+            toolbar_camera.isEnabled = false
+            toolbar_folder.isEnabled = false
+        }
+    }
+    
+    func changeMap() {
+        if mapMode.selectedSegmentIndexes == [0] { //Map mode
+            NSLog("changeMap standard")
+            cam = nil
             map.mapType = .standard
         }
-        if sender.selectedSegmentIndexes == [1] { //Satellite mode
-            setupCamera(is3D: false)
+        if mapMode.selectedSegmentIndexes == [1] { //Satellite mode
+            NSLog("changeMap satellite")
+            cam = nil
             map.mapType = .satellite
         }
-        if sender.selectedSegmentIndexes == [2] { //Mix mode
-            setupCamera(is3D: false)
+        if mapMode.selectedSegmentIndexes == [2] { //Mix mode
+            NSLog("changeMap hybrid")
+            cam = nil
             map.mapType = .hybrid
         }
-        
-        if sender.selectedSegmentIndexes == [0, 3] { //Map mode in 3D
-            print("3D standard")
-            cam = nil
+        if mapMode.selectedSegmentIndexes == [0, 3] { //Map mode in 3D
+            print("changeMap 3D standard")
             setupCamera(is3D: true)
             map.mapType = .standard
         }
-        if sender.selectedSegmentIndexes == [1, 3] { //Satellite mode in 3D
-            print("3D Satellite")
-            cam = nil
+        if mapMode.selectedSegmentIndexes == [1, 3] { //Satellite mode in 3D
+            print("changeMap 3D satelliteFlyover")
             setupCamera(is3D: true)
             map.mapType = .satelliteFlyover
         }
-        if sender.selectedSegmentIndexes == [2, 3] { //Mix mode in 3D
-            print("3D Mix")
-            cam = nil
+        if mapMode.selectedSegmentIndexes == [2, 3] { //Mix mode in 3D
+            print("changeMap 3D hybridFlyover")
             setupCamera(is3D: true)
             map.mapType = .hybridFlyover
         }
-        
         if cam != nil {
             map.camera = cam!
         }
@@ -140,7 +185,6 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
             viewPoint = CLLocationCoordinate2D(latitude: lat - 0.01, longitude: lon)
         }
         let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
-        
         print("location", location.latitude , location.longitude)
         print("viewPoint", viewPoint.latitude , viewPoint.longitude)
         map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
@@ -161,7 +205,47 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         }
     }
     
-    // CLLocationManagerDelegate protocol
+    @objc func doTakePhoto() {
+        let imgPicker = UIImagePickerController()
+        imgPicker.delegate = self
+        imgPicker.sourceType = .camera
+        let vc = UIApplication.shared.windows[0].rootViewController
+        vc?.present(imgPicker, animated: true, completion: nil)
+    }
+    
+    @objc func doSelectPhoto() {
+        let imgPicker = UIImagePickerController()
+        imgPicker.delegate = self
+        imgPicker.sourceType = .photoLibrary
+        let vc = UIApplication.shared.windows[0].rootViewController
+        vc?.present(imgPicker, animated: true, completion: nil)
+    }
+    
+    // UIImagePickerDelegate protocol//////////////////////////////////////////
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true, completion: nil)
+        aPicture.removeFromSuperview()
+        let img =  info[UIImagePickerController.InfoKey.originalImage] as! UIImage
+        aPicture = UIImageView(image: img)
+        scrollPict.addSubview(aPicture)
+        scrollPict.setNeedsDisplay()
+    }
+    
+    // UIScrollViewDelegate protocol//////////////////////////////////////////
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return aPicture
+    }
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+        scrollView.zoomScale = scale
+    }
+    
+    
+    // CLLocationManagerDelegate protocol//////////////////////////////////////////
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location.text = manager.location?.description
         CLmngr.stopUpdatingLocation() //Only one mesure
@@ -176,7 +260,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         location.text = error.localizedDescription
     }
     
-    // MKMapViewDelegate protocol
+    // MKMapViewDelegate protocol //////////////////////////////////////////
+    
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         let epingle = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "BaTe")
         epingle.pinTintColor = color
@@ -187,12 +272,18 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     }
     
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) { //when tap on the (i) button
-        location.text = "Coordinate of -" + (view.annotation?.title!)! + "-"
+        location.text = "Add info for -" + (view.annotation?.title!)! + "-"
     }
     
-    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) { //
-        location.text = "You selected -" + (view.annotation?.title!)! + "-"
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        enableToolBar(turnOn: true)
+        location.text = "Selected -" + (view.annotation?.title!)! + "-"
     }
+    
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        enableToolBar(turnOn: false)
+    }
+    
     /*
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         let zoomWidth = mapView.visibleMapRect.size.width
@@ -201,20 +292,29 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         print("...REGION DID CHANGE: ZOOM FACTOR \(zoom)")
     }*/
     
-    // MultiSelectSegmentedControlDelegate protocol
+    
+    // MultiSelectSegmentedControlDelegate protocol//////////////////////////////////////////
+    
     func multiSelect(_ multiSelectSegmentedControl: MultiSelectSegmentedControl, didChangeValue value: Bool, at index: UInt) {
         if index == 0 {
+            mapMode.selectAllSegments(true)
             mapMode.selectedSegmentIndexes.remove(1)
             mapMode.selectedSegmentIndexes.remove(2)
+            mapMode.selectedSegmentIndexes.remove(3)
         }
         if index == 1 {
+            mapMode.selectAllSegments(true)
+            mapMode.selectedSegmentIndexes.remove(3)
             mapMode.selectedSegmentIndexes.remove(0)
             mapMode.selectedSegmentIndexes.remove(2)
         }
         if index == 2 {
+            mapMode.selectAllSegments(true)
+            mapMode.selectedSegmentIndexes.remove(3)
             mapMode.selectedSegmentIndexes.remove(1)
             mapMode.selectedSegmentIndexes.remove(0)
         }
+        changeMap()
     }
     
 }
