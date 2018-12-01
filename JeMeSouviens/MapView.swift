@@ -40,6 +40,7 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     //Photo
     private let scrollPict = UIScrollView()
     private var aPicture = UIImageView()
+    private var isShowPhoto = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -57,19 +58,21 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         toolbar_add.action = #selector(addPin(sender:))
         toolbar_folder.target = self.superview
         toolbar_folder.action = #selector(doSelectPhoto)
+        
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            NSLog( "Camera OK!")
             toolbar_camera.target = self.superview
             toolbar_camera.action = #selector(doTakePhoto)
         }
-        
         //PhotoView
+        
+        //WE DONT NEED SCROLL VIEW HERE, CHANGE WITH UIImageView
         scrollPict.backgroundColor = .lightGray
         scrollPict.maximumZoomScale = 1.0
         scrollPict.minimumZoomScale = 0.05
         scrollPict.contentInset = UIEdgeInsets(top: 2, left: 2, bottom: 2, right: 2)
         scrollPict.delegate = self
         scrollPict.addSubview(aPicture)
-        
         
         // Map and Location
         location.isSelectable = false
@@ -86,8 +89,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         map.delegate = self
         CLmngr.delegate = self
         
-        self.addSubview(map)
         self.addSubview(scrollPict)
+        self.addSubview(map)
         self.addSubview(mapMode)
         self.addSubview(location)
         self.addSubview(toolbar)
@@ -107,10 +110,18 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         else if UIDevice.current.userInterfaceIdiom == .phone && size.width > size.height {
             top = 0
         }
-        map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
-        mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
-        toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
-        location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
+        if isShowPhoto {
+            map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height/2))
+            scrollPict.frame = CGRect(x: 0, y: Int(size.height/2), width: Int(size.width), height: Int(size.height/2))
+            mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+            toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+            //location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
+        } else {
+            map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
+            mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+            toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+            //location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
+        }
     }
     
     @objc func computePosition(_ sender: Any) {
@@ -221,21 +232,24 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         vc?.present(imgPicker, animated: true, completion: nil)
     }
     
-    // UIImagePickerDelegate protocol//////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // UIImagePickerDelegate protocol
+    
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true, completion: nil)
     }
-    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true, completion: nil)
         aPicture.removeFromSuperview()
         let img =  info[UIImagePickerController.InfoKey.originalImage] as! UIImage
         aPicture = UIImageView(image: img)
+        aPicture.contentMode = .scaleAspectFit
+        
         scrollPict.addSubview(aPicture)
         scrollPict.setNeedsDisplay()
     }
-    
-    // UIScrollViewDelegate protocol//////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // UIScrollViewDelegate protocol
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return aPicture
     }
@@ -243,8 +257,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         scrollView.zoomScale = scale
     }
     
-    
-    // CLLocationManagerDelegate protocol//////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // CLLocationManagerDelegate protocol
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location.text = manager.location?.description
@@ -259,8 +273,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         location.text = error.localizedDescription
     }
-    
-    // MKMapViewDelegate protocol //////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // MKMapViewDelegate protocol
     
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         let epingle = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "BaTe")
@@ -278,10 +292,14 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         enableToolBar(turnOn: true)
         location.text = "Selected -" + (view.annotation?.title!)! + "-"
+        isShowPhoto = true
+        self.drawInSize(UIScreen.main.bounds.size)
     }
     
     func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         enableToolBar(turnOn: false)
+        isShowPhoto = false
+        self.drawInSize(UIScreen.main.bounds.size)
     }
     
     /*
@@ -292,8 +310,8 @@ class MyMap: UIView, CLLocationManagerDelegate, MKMapViewDelegate, UITextFieldDe
         print("...REGION DID CHANGE: ZOOM FACTOR \(zoom)")
     }*/
     
-    
-    // MultiSelectSegmentedControlDelegate protocol//////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////
+    // MultiSelectSegmentedControlDelegate protocol
     
     func multiSelect(_ multiSelectSegmentedControl: MultiSelectSegmentedControl, didChangeValue value: Bool, at index: UInt) {
         if index == 0 {
