@@ -15,6 +15,8 @@ class AnAnnotation: NSObject, MKAnnotation {
     var title: String?
     var subtitle: String?
     
+    //var image: UIImage?
+    
     init(c: CLLocationCoordinate2D) {
         coordinate = c
         super.init()
@@ -29,5 +31,4 @@ class AnAnnotation: NSObject, MKAnnotation {
         self.init(c: c, t: t)
         subtitle = st
     }
-    
 }
