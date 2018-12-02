@@ -12,5 +12,12 @@ import UIKit
 class People: NSObject {
     var myAnnotation : AnAnnotation?
     var myImage : UIImage?
-
+    var myName : String?
+    var myFirstName : String?
+    var myNumber : String?
+    func setInfo(myName : String, myFirstName : String,  myNumber : String) {
+        self.myName = myName
+        self.myFirstName = myFirstName
+        self.myNumber = myNumber
+    }
 }

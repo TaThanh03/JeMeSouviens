@@ -11,10 +11,13 @@ import CoreLocation
 import MapKit
 import UIKit
 import MultiSelectSegmentedControl //3rd party library
+import Contacts
+import ContactsUI
 
 
 class MyMap: UIView { //UITextFieldDelegate
     private var listPeople = [People]()
+    private var currentPeople = People()
     
     private let location = UITextView()
     //add, delete, home, contact, camera, folder
@@ -26,8 +29,8 @@ class MyMap: UIView { //UITextFieldDelegate
     private let toolbar_camera = UIBarButtonItem(barButtonSystemItem: .camera, target: nil, action: nil)
     private let toolbar_folder = UIBarButtonItem(barButtonSystemItem: .organize, target: nil, action: nil)
     
-    // location in map need : latitude, longtitude
-    // camera needs : orientation, altitude
+    // Location in map need : latitude, longtitude
+    // Camera needs : orientation, altitude
     private let CLmngr = CLLocationManager() //for location
     private let map = MKMapView() //for map
     private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
@@ -43,10 +46,14 @@ class MyMap: UIView { //UITextFieldDelegate
     private var aPicture = UIImageView()
     private var isShowPhoto = false
     
+    //Contact
+    private let contactsC = CNContactPickerViewController()
+    private let contactsS = CNContactStore()
+    private var contactVC : CNContactViewController?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         self.backgroundColor = UIColor.white
-        
         //ToolBar
         let espace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
         espace.width = 10
@@ -57,18 +64,17 @@ class MyMap: UIView { //UITextFieldDelegate
         toolbar_home.action = #selector(computePosition(_:))
         toolbar_add.target = self.superview
         toolbar_add.action = #selector(addPin(sender:))
+        toolbar_contact.target = self.superview
+        toolbar_contact.action = #selector(searchContact)
         toolbar_folder.target = self.superview
         toolbar_folder.action = #selector(doSelectPhoto)
-    
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             NSLog( "Camera OK!")
             toolbar_camera.target = self.superview
             toolbar_camera.action = #selector(doTakePhoto)
         }
-        
         //PhotoView
         aPicture.backgroundColor = .lightGray
-        
         // Map and Location
         location.isSelectable = false
         location.isEditable = false
@@ -83,7 +89,6 @@ class MyMap: UIView { //UITextFieldDelegate
         mapMode.delegate = self
         map.delegate = self
         CLmngr.delegate = self
-        
         self.addSubview(aPicture)
         self.addSubview(map)
         self.addSubview(mapMode)
@@ -91,7 +96,6 @@ class MyMap: UIView { //UITextFieldDelegate
         self.addSubview(toolbar)
         self.drawInSize(UIScreen.main.bounds.size)
     }
-    
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -101,8 +105,7 @@ class MyMap: UIView { //UITextFieldDelegate
         let tbar = 44
         if UIDevice.current.userInterfaceIdiom == .phone && size.height >= 812 {
             top = 30
-        }
-        else if UIDevice.current.userInterfaceIdiom == .phone && size.width > size.height {
+        } else if UIDevice.current.userInterfaceIdiom == .phone && size.width > size.height {
             top = 0
         }
         if isShowPhoto {
@@ -118,21 +121,6 @@ class MyMap: UIView { //UITextFieldDelegate
             //location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
         }
     }
-    
-    @objc func computePosition(_ sender: Any) {
-        NSLog("computePosition")
-        location.text = "searching..."
-        CLmngr.startUpdatingLocation()
-    }
-    
-    @objc func addPin(sender: UIButton) {
-        let newPeople = People()
-        newPeople.myAnnotation = AnAnnotation(c: map.centerCoordinate, t: String(format:"Name %d", count), st: String(format:"Contact %d", count))
-        listPeople.append(newPeople)
-        count += 1
-        map.addAnnotation(newPeople.myAnnotation!)
-    }
-    
     func enableToolBar(turnOn: Bool) {
         if turnOn {
             toolbar_trash.isEnabled = true
@@ -146,61 +134,6 @@ class MyMap: UIView { //UITextFieldDelegate
             toolbar_folder.isEnabled = false
         }
     }
-    
-    func changeMap() {
-        if mapMode.selectedSegmentIndexes == [0] { //Map mode
-            NSLog("changeMap standard")
-            cam = nil
-            map.mapType = .standard
-        }
-        if mapMode.selectedSegmentIndexes == [1] { //Satellite mode
-            NSLog("changeMap satellite")
-            cam = nil
-            map.mapType = .satellite
-        }
-        if mapMode.selectedSegmentIndexes == [2] { //Mix mode
-            NSLog("changeMap hybrid")
-            cam = nil
-            map.mapType = .hybrid
-        }
-        if mapMode.selectedSegmentIndexes == [0, 3] { //Map mode in 3D
-            print("changeMap 3D standard")
-            setupCamera(is3D: true)
-            map.mapType = .standard
-        }
-        if mapMode.selectedSegmentIndexes == [1, 3] { //Satellite mode in 3D
-            print("changeMap 3D satelliteFlyover")
-            setupCamera(is3D: true)
-            map.mapType = .satelliteFlyover
-        }
-        if mapMode.selectedSegmentIndexes == [2, 3] { //Mix mode in 3D
-            print("changeMap 3D hybridFlyover")
-            setupCamera(is3D: true)
-            map.mapType = .hybridFlyover
-        }
-        if cam != nil {
-            map.camera = cam!
-        }
-    }
-    
-    func setupCamera(is3D: Bool) {
-        let lat = map.centerCoordinate.latitude
-        let lon = map.centerCoordinate.longitude
-        let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        var viewPoint = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        if is3D {
-            viewPoint = CLLocationCoordinate2D(latitude: lat - 0.01, longitude: lon)
-        }
-        let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
-        print("location", location.latitude , location.longitude)
-        print("viewPoint", viewPoint.latitude , viewPoint.longitude)
-        map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
-        map.showsBuildings = true
-        cam = MKMapCamera(lookingAtCenter: location, fromEyeCoordinate: viewPoint, eyeAltitude: eagle_altitude)
-        cam?.heading = eagle_orientation
-        map.camera = cam!
-    }
-    
     func nextColor (c: UIColor) -> UIColor {
         switch c {
         case .orange: return .red
@@ -239,6 +172,9 @@ extension MyMap : UIImagePickerControllerDelegate {
         let img =  info[UIImagePickerController.InfoKey.originalImage] as! UIImage
         aPicture.image = img
         aPicture.contentMode = .scaleAspectFit
+        //Save the image
+        currentPeople.myImage = aPicture.image
+        aPicture.image = nil
     }
 }
 
@@ -256,6 +192,28 @@ extension MyMap : CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         location.text = error.localizedDescription
     }
+    @objc func computePosition(_ sender: Any) {
+        NSLog("computePosition")
+        location.text = "searching..."
+        CLmngr.startUpdatingLocation()
+    }
+    func setupCamera(is3D: Bool) {
+        let lat = map.centerCoordinate.latitude
+        let lon = map.centerCoordinate.longitude
+        let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        var viewPoint = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        if is3D {
+            viewPoint = CLLocationCoordinate2D(latitude: lat - 0.01, longitude: lon)
+        }
+        let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
+        print("location", location.latitude , location.longitude)
+        print("viewPoint", viewPoint.latitude , viewPoint.longitude)
+        map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
+        map.showsBuildings = true
+        cam = MKMapCamera(lookingAtCenter: location, fromEyeCoordinate: viewPoint, eyeAltitude: eagle_altitude)
+        cam?.heading = eagle_orientation
+        map.camera = cam!
+    }
 }
 
 extension MyMap : MKMapViewDelegate {
@@ -270,8 +228,10 @@ extension MyMap : MKMapViewDelegate {
     }
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         //when tap on the (i) button
-        location.text = "Add info for -" + (view.annotation?.title!)! + "-"
+        location.text = "Add new contact for -" + (view.annotation?.title!)! + "-"
+        addContact()
     }
+    
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         var isHavingPhoto = false
         enableToolBar(turnOn: true)
@@ -280,29 +240,26 @@ extension MyMap : MKMapViewDelegate {
             //aPicture.image = UIImage(named: "AppIcon")
             return
         } else {
-            //Search the image
+            //Update the currentPeople
             for i in listPeople {
-                if i.myAnnotation?.title == view.annotation?.title && i.myImage != nil{
-                    isHavingPhoto = true
-                    aPicture.image = i.myImage
+                if i.myAnnotation?.title == view.annotation?.title {
+                    currentPeople = i
+                    if currentPeople.myImage != nil {
+                        isHavingPhoto = true
+                        aPicture.image = currentPeople.myImage
+                    }
                     break
                 }
             }
         }
+        view.annotation = currentPeople.myAnnotation
+        //Show the image if exist
         if isHavingPhoto {
             isShowPhoto = true
             self.drawInSize(UIScreen.main.bounds.size)
         }
     }
     func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-        //Save the image
-        for i in listPeople {
-            if i.myAnnotation?.title == view.annotation?.title {
-                i.myImage = aPicture.image
-                aPicture.image = nil
-                break
-            }
-        }
         enableToolBar(turnOn: false)
         isShowPhoto = false
         self.drawInSize(UIScreen.main.bounds.size)
@@ -314,6 +271,13 @@ extension MyMap : MKMapViewDelegate {
         print(mapView.visibleMapRect.size.width, mapView.visibleMapRect.size.height)
         print("...REGION DID CHANGE: ZOOM FACTOR \(zoom)")
     }*/
+    @objc func addPin(sender: UIButton) {
+        let newPeople = People()
+        newPeople.myAnnotation = AnAnnotation(c: map.centerCoordinate, t: String(format:"Name %d", count), st: String(format:"Contact %d", count))
+        listPeople.append(newPeople)
+        count += 1
+        map.addAnnotation(newPeople.myAnnotation!)
+    }
 }
 
 extension MyMap : MultiSelectSegmentedControlDelegate {
@@ -337,5 +301,120 @@ extension MyMap : MultiSelectSegmentedControlDelegate {
             mapMode.selectedSegmentIndexes.remove(0)
         }
         changeMap()
+    }
+    func changeMap() {
+        if mapMode.selectedSegmentIndexes == [0] { //Map mode
+            NSLog("changeMap standard")
+            cam = nil
+            map.mapType = .standard
+        }
+        if mapMode.selectedSegmentIndexes == [1] { //Satellite mode
+            NSLog("changeMap satellite")
+            cam = nil
+            map.mapType = .satellite
+        }
+        if mapMode.selectedSegmentIndexes == [2] { //Mix mode
+            NSLog("changeMap hybrid")
+            cam = nil
+            map.mapType = .hybrid
+        }
+        if mapMode.selectedSegmentIndexes == [0, 3] { //Map mode in 3D
+            print("changeMap 3D standard")
+            setupCamera(is3D: true)
+            map.mapType = .standard
+        }
+        if mapMode.selectedSegmentIndexes == [1, 3] { //Satellite mode in 3D
+            print("changeMap 3D satelliteFlyover")
+            setupCamera(is3D: true)
+            map.mapType = .satelliteFlyover
+        }
+        if mapMode.selectedSegmentIndexes == [2, 3] { //Mix mode in 3D
+            print("changeMap 3D hybridFlyover")
+            setupCamera(is3D: true)
+            map.mapType = .hybridFlyover
+        }
+        if cam != nil {
+            map.camera = cam!
+        }
+    }
+}
+
+extension MyMap : CNContactPickerDelegate {
+    @objc func searchContact() {
+        contactsS.requestAccess(for: .contacts) { (b : Bool, e : Error?) in
+            //Important to execute on main thread to reach
+            //UIApplication.shared.windows in a safe way
+            DispatchQueue.main.async {
+                let vc = UIApplication.shared.windows[0].rootViewController
+                if !b {
+                    let a = UIAlertController(title: "Error", message: "Access to contact refused", preferredStyle: .alert)
+                    a.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+                    vc?.present(a, animated: true, completion: nil)
+                } else {
+                    print("=====CNContactPicker view controleur")
+                    vc?.present(self.contactsC, animated: true, completion: nil)
+                }
+            }
+        }
+    }
+    @objc func addContact() {
+        contactsS.requestAccess(for: .contacts) { (b : Bool, e : Error?) in
+            let vc = UIApplication.shared.windows[0].rootViewController
+            if !b {
+                let a = UIAlertController(title: "Error", message: "Access to contact refused", preferredStyle: .alert)
+                a.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+                vc?.present(a, animated: true, completion: nil)
+            } else {
+                let x = CNMutableContact()
+                self.contactVC = CNContactViewController(forNewContact: x)
+                self.contactVC!.delegate = self
+                let n = UINavigationController(rootViewController: self.contactVC!)
+                vc?.present(n, animated: true, completion: nil)
+            }
+        }
+    }
+    func addPeopleContactInfo(contact: CNContact?, people: People) {
+        if contact != nil {
+            if contact!.isKeyAvailable(CNContactFamilyNameKey) {
+                people.myName = contact!.familyName
+            }
+            if contact!.isKeyAvailable(CNContactGivenNameKey) {
+                people.myFirstName = contact!.givenName
+            }
+            people.myNumber = ""
+            if contact!.isKeyAvailable(CNContactPhoneNumbersKey) {
+                for n : CNLabeledValue in contact!.phoneNumbers{
+                    let num = n.value.stringValue
+                    people.myNumber = num
+                }
+            }
+            if contact?.thumbnailImageData != nil {
+                people.myImage = UIImage(data: contact!.thumbnailImageData!)
+            }
+        } else {
+            people.myName = "<nul>"
+            people.myFirstName = "<nul>"
+            people.myNumber = "<nul>"
+            people.myImage = nil
+        }
+        people.myAnnotation?.title = people.myName
+        people.myAnnotation?.subtitle = people.myNumber
+    }
+    
+    func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
+        print("didSelect contact")
+        addPeopleContactInfo(contact: contact, people: currentPeople)
+    }
+    
+    func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+        print("contactPickerDidCancel")
+    }
+}
+
+extension MyMap : CNContactViewControllerDelegate {
+    func contactViewController(_ viewController: CNContactViewController, didCompleteWith contact: CNContact?) {
+        contactVC?.dismiss(animated: true, completion: nil)
+        contactVC = nil
+        addPeopleContactInfo(contact: contact, people: currentPeople)
     }
 }
