@@ -18,8 +18,6 @@ import ContactsUI
 class MyMap: UIView { //UITextFieldDelegate
     private var listPeople = [People]()
     private var currentPeople = People()
-    
-    private let location = UITextView()
     //add, delete, home, contact, camera, folder
     private let toolbar = UIToolbar();
     private let toolbar_add = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: nil)
@@ -36,7 +34,7 @@ class MyMap: UIView { //UITextFieldDelegate
     private let mapMode = MultiSelectSegmentedControl(items: ["Map", "Satellite", "Mix", "3D"])
     private var cam : MKMapCamera? //for 3D
     private var eagle_altitude = 50.0
-    private var eagle_orientation = 120.0
+    private var eagle_orientation = 50.0
     private var count = 1
     private var color = UIColor.orange
     private var zoom = 0
@@ -58,7 +56,7 @@ class MyMap: UIView { //UITextFieldDelegate
         let espace = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
         espace.width = 10
         let varEspace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace ,target: nil, action: nil)
-        toolbar.items = [toolbar_add,espace, toolbar_trash, varEspace, toolbar_home, varEspace, toolbar_contact, espace, toolbar_camera, espace, toolbar_folder]
+        toolbar.items = [toolbar_add, espace, toolbar_trash, varEspace, toolbar_home, varEspace, toolbar_contact, espace, toolbar_camera, espace, toolbar_folder]
         enableToolBar(turnOn: false)
         toolbar_home.target = self.superview
         toolbar_home.action = #selector(computePosition(_:))
@@ -76,12 +74,9 @@ class MyMap: UIView { //UITextFieldDelegate
         //PhotoView
         aPicture.backgroundColor = .lightGray
         // Map and Location
-        location.isSelectable = false
-        location.isEditable = false
-        location.text = "Where am i?"
-        location.textAlignment = .center
         map.isScrollEnabled = true
         map.isZoomEnabled = true
+        map.showsCompass = false
         CLmngr.distanceFilter = 1.0 //Precision = 1m
         CLmngr.requestWhenInUseAuthorization()
         mapMode.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
@@ -92,7 +87,6 @@ class MyMap: UIView { //UITextFieldDelegate
         self.addSubview(aPicture)
         self.addSubview(map)
         self.addSubview(mapMode)
-        self.addSubview(location)
         self.addSubview(toolbar)
         self.drawInSize(UIScreen.main.bounds.size)
     }
@@ -109,16 +103,16 @@ class MyMap: UIView { //UITextFieldDelegate
             top = 0
         }
         if isShowPhoto {
+            aPicture.isHidden = false
             map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height/2))
             aPicture.frame = CGRect(x: 0, y: Int(size.height/2), width: Int(size.width), height: Int(size.height/2))
             mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
             toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
-            //location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
         } else {
+            aPicture.isHidden = true
             map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
             mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
             toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
-            //location.frame = CGRect(x: 10, y: Int(size.height - 150), width: Int(size.width - 20), height: 60)
         }
     }
     func enableToolBar(turnOn: Bool) {
@@ -180,7 +174,6 @@ extension MyMap : UIImagePickerControllerDelegate {
 
 extension MyMap : CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        location.text = manager.location?.description
         CLmngr.stopUpdatingLocation() //Only one mesure
         // Map update
         let span = MKCoordinateSpan(latitudeDelta: 0.035, longitudeDelta: 0.035)
@@ -190,35 +183,34 @@ extension MyMap : CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        location.text = error.localizedDescription
+        print(error.localizedDescription)
     }
     @objc func computePosition(_ sender: Any) {
-        NSLog("computePosition")
-        location.text = "searching..."
+        print("searching....")
         CLmngr.startUpdatingLocation()
     }
     func setupCamera(is3D: Bool) {
-        let lat = map.centerCoordinate.latitude
-        let lon = map.centerCoordinate.longitude
-        let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        var viewPoint = CLLocationCoordinate2D(latitude: lat, longitude: lon)
         if is3D {
+            let lat = map.centerCoordinate.latitude
+            let lon = map.centerCoordinate.longitude
+            let location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            var viewPoint = CLLocationCoordinate2D(latitude: lat, longitude: lon)
             viewPoint = CLLocationCoordinate2D(latitude: lat - 0.01, longitude: lon)
+            let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
+            print("location", location.latitude , location.longitude)
+            print("viewPoint", viewPoint.latitude , viewPoint.longitude)
+            map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
+            map.showsBuildings = true
+            cam = MKMapCamera(lookingAtCenter: location, fromEyeCoordinate: viewPoint, eyeAltitude: eagle_altitude)
+            cam?.heading = eagle_orientation
+            map.camera = cam!
         }
-        let span = MKCoordinateSpan(latitudeDelta: 3, longitudeDelta: 3)
-        print("location", location.latitude , location.longitude)
-        print("viewPoint", viewPoint.latitude , viewPoint.longitude)
-        map.setRegion(MKCoordinateRegion(center: location, span: span), animated: true)
-        map.showsBuildings = true
-        cam = MKMapCamera(lookingAtCenter: location, fromEyeCoordinate: viewPoint, eyeAltitude: eagle_altitude)
-        cam?.heading = eagle_orientation
-        map.camera = cam!
     }
 }
 
 extension MyMap : MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        let epingle = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "BaTe")
+        let epingle = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "reusePin")
         epingle.pinTintColor = color
         color = nextColor(c: color)
         epingle.canShowCallout = true
@@ -228,14 +220,14 @@ extension MyMap : MKMapViewDelegate {
     }
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         //when tap on the (i) button
-        location.text = "Add new contact for -" + (view.annotation?.title!)! + "-"
+        print("Add new contact for -" + (view.annotation?.title!)! + "-")
         addContact()
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         var isHavingPhoto = false
         enableToolBar(turnOn: true)
-        location.text = "Selected -" + (view.annotation?.title!)! + "-"
+        print("Selected -" + (view.annotation?.title!)! + "-")
         if view.annotation === mapView.userLocation {
             //aPicture.image = UIImage(named: "AppIcon")
             return
@@ -405,7 +397,6 @@ extension MyMap : CNContactPickerDelegate {
         print("didSelect contact")
         addPeopleContactInfo(contact: contact, people: currentPeople)
     }
-    
     func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
         print("contactPickerDidCancel")
     }
