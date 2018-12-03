@@ -97,23 +97,36 @@ class MyMap: UIView { //UITextFieldDelegate
     func drawInSize(_ size: CGSize) {
         var top = 20
         let tbar = 44
-        if UIDevice.current.userInterfaceIdiom == .phone && size.height >= 812 {
+        if UIDevice.current.userInterfaceIdiom == .phone && size.height >= 450 {
             top = 30
+            if isShowPhoto {
+                aPicture.isHidden = false
+                map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height/2))
+                aPicture.frame = CGRect(x: 0, y: Int(size.height/2), width: Int(size.width), height: Int(size.height/2))
+                mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+                toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+            } else {
+                aPicture.isHidden = true
+                map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
+                mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+                toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+            }
         } else if UIDevice.current.userInterfaceIdiom == .phone && size.width > size.height {
             top = 0
+            if isShowPhoto {
+                aPicture.isHidden = false
+                map.frame = CGRect(x: 0, y: top, width: Int(size.width/2), height: Int(size.height))
+                aPicture.frame = CGRect(x: Int(size.width/2), y: top, width: Int(size.width/2), height: Int(size.height))
+                mapMode.frame = CGRect(x: 10, y: top + 10, width: Int(size.width/2 - 20), height: 30)
+                toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width/2), height: tbar)
+            } else {
+                aPicture.isHidden = true
+                map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
+                mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
+                toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
+            }
         }
-        if isShowPhoto {
-            aPicture.isHidden = false
-            map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height/2))
-            aPicture.frame = CGRect(x: 0, y: Int(size.height/2), width: Int(size.width), height: Int(size.height/2))
-            mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
-            toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
-        } else {
-            aPicture.isHidden = true
-            map.frame = CGRect(x: 0, y: top, width: Int(size.width), height: Int(size.height))
-            mapMode.frame = CGRect(x: 20, y: top + 20, width: Int(size.width - 40), height: 30)
-            toolbar.frame = CGRect(x: 0, y: Int(size.height) - tbar, width: Int(size.width), height: tbar)
-        }
+        
     }
     func enableToolBar(turnOn: Bool) {
         if turnOn {
@@ -256,13 +269,6 @@ extension MyMap : MKMapViewDelegate {
         isShowPhoto = false
         self.drawInSize(UIScreen.main.bounds.size)
     }
-    /*
-    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        let zoomWidth = mapView.visibleMapRect.size.width
-        zoom = Int(log2(zoomWidth)) - 7
-        print(mapView.visibleMapRect.size.width, mapView.visibleMapRect.size.height)
-        print("...REGION DID CHANGE: ZOOM FACTOR \(zoom)")
-    }*/
     @objc func addPin(sender: UIButton) {
         let newPeople = People()
         newPeople.myAnnotation = AnAnnotation(c: map.centerCoordinate, t: String(format:"Name %d", count), st: String(format:"Contact %d", count))
@@ -331,7 +337,8 @@ extension MyMap : MultiSelectSegmentedControlDelegate {
     }
 }
 
-extension MyMap : CNContactPickerDelegate {
+
+extension MyMap : CNContactPickerDelegate , CNContactViewControllerDelegate {
     @objc func searchContact() {
         contactsS.requestAccess(for: .contacts) { (b : Bool, e : Error?) in
             //Important to execute on main thread to reach
@@ -392,20 +399,16 @@ extension MyMap : CNContactPickerDelegate {
         people.myAnnotation?.title = people.myName
         people.myAnnotation?.subtitle = people.myNumber
     }
-    
+    func contactViewController(_ viewController: CNContactViewController, didCompleteWith contact: CNContact?) {
+        contactVC?.dismiss(animated: true, completion: nil)
+        contactVC = nil
+        addPeopleContactInfo(contact: contact, people: currentPeople)
+    }
     func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
         print("didSelect contact")
         addPeopleContactInfo(contact: contact, people: currentPeople)
     }
     func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
         print("contactPickerDidCancel")
-    }
-}
-
-extension MyMap : CNContactViewControllerDelegate {
-    func contactViewController(_ viewController: CNContactViewController, didCompleteWith contact: CNContact?) {
-        contactVC?.dismiss(animated: true, completion: nil)
-        contactVC = nil
-        addPeopleContactInfo(contact: contact, people: currentPeople)
     }
 }

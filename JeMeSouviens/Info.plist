@@ -2,20 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>I need photo library</string>
-	<key>NSContactsUsageDescription</key>
-	<string>I need to access contact</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>I need microphone to take picture</string>
-	<key>NSCameraUsageDescription</key>
-	<string>I need camera to take picture</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Explain why i need CoreLocation always</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Explain why i need CoreLocation when in use</string>
-	<key>NSLocationUsageDescription</key>
-	<string>Explain why i need CoreLocation usage description</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDocumentTypes</key>
@@ -60,6 +46,20 @@
 		<string>MKDirectionsModeTaxi</string>
 		<string>MKDirectionsModeTrain</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>I need camera to take picture</string>
+	<key>NSContactsUsageDescription</key>
+	<string>I need to access contact</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Explain why i need CoreLocation always</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Explain why i need CoreLocation usage description</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Explain why i need CoreLocation when in use</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>I need microphone to take picture</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>I need photo library</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
